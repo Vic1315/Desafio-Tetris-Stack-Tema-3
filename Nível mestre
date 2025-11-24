@@ -1,0 +1,218 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+// Definição da struct Peca
+typedef struct Peca {
+    char nome;
+    int id;
+    struct Peca* proximo;
+} Peca;
+
+// Definição da struct Fila
+typedef struct {
+    Peca* inicio;
+    Peca* fim;
+    int tamanho;
+    int capacidade;
+} Fila;
+
+// Definição da struct Pilha
+typedef struct {
+    Peca* topo;
+    int tamanho;
+    int capacidade;
+} Pilha;
+
+// Função para criar uma nova peça
+Peca* gerarPeca(int id) {
+    Peca* novaPeca = (Peca*) malloc(sizeof(Peca));
+    char nomes[] = {'I', 'O', 'T', 'L'};
+    novaPeca->nome = nomes[id % 4];
+    novaPeca->id = id;
+    novaPeca->proximo = NULL;
+    return novaPeca;
+}
+
+// Função para inicializar a fila
+void inicializarFila(Fila* fila, int capacidade) {
+    fila->inicio = NULL;
+    fila->fim = NULL;
+    fila->tamanho = 0;
+    fila->capacidade = capacidade;
+}
+
+// Função para inicializar a pilha
+void inicializarPilha(Pilha* pilha, int capacidade) {
+    pilha->topo = NULL;
+    pilha->tamanho = 0;
+    pilha->capacidade = capacidade;
+}
+
+// Função para adicionar uma peça ao final da fila
+void enqueue(Fila* fila, Peca* peca) {
+    if (fila->tamanho < fila->capacidade) {
+        if (fila->inicio == NULL) {
+            fila->inicio = peca;
+            fila->fim = peca;
+        } else {
+            fila->fim->proximo = peca;
+            fila->fim = peca;
+        }
+        fila->tamanho++;
+    }
+}
+
+// Função para remover a peça da frente da fila
+Peca* dequeue(Fila* fila) {
+    if (fila->tamanho > 0) {
+        Peca* peca = fila->inicio;
+        fila->inicio = fila->inicio->proximo;
+        if (fila->inicio == NULL) {
+            fila->fim = NULL;
+        }
+        fila->tamanho--;
+        return peca;
+    }
+    return NULL;
+}
+
+// Função para adicionar uma peça ao topo da pilha
+void push(Pilha* pilha, Peca* peca) {
+    if (pilha->tamanho < pilha->capacidade) {
+        peca->proximo = pilha->topo;
+        pilha->topo = peca;
+        pilha->tamanho++;
+    }
+}
+
+// Função para remover a peça do topo da pilha
+Peca* pop(Pilha* pilha) {
+    if (pilha->tamanho > 0) {
+        Peca* peca = pilha->topo;
+        pilha->topo = pilha->topo->proximo;
+        pilha->tamanho--;
+        return peca;
+    }
+    return NULL;
+}
+
+// Função para exibir a fila
+void exibirFila(Fila* fila) {
+    Peca* atual = fila->inicio;
+    printf("Fila de peças: ");
+    while (atual != NULL) {
+        printf("[%c %d] ", atual->nome, atual->id);
+        atual = atual->proximo;
+    }
+    printf("\n");
+}
+
+// Função para exibir a pilha
+void exibirPilha(Pilha* pilha) {
+    Peca* atual = pilha->topo;
+    printf("Pilha de reserva (Topo -> base): ");
+    while (atual != NULL) {
+        printf("[%c %d] ", atual->nome, atual->id);
+        atual = atual->proximo;
+    }
+    printf("\n");
+}
+
+int main() {
+    Fila fila;
+    Pilha pilha;
+    inicializarFila(&fila, 5);
+    inicializarPilha(&pilha, 3);
+
+    // Inicializar a fila com 5 peças
+    for (int i = 0; i < 5; i++) {
+        Peca* peca = gerarPeca(i);
+        enqueue(&fila, peca);
+    }
+
+    int opcao;
+    int id = 5;
+    do {
+        exibirFila(&fila);
+        exibirPilha(&pilha);
+        printf("Opções de ação:\n");
+        printf("1 - Jogar peça da frente da fila\n");
+        printf("2 - Enviar peça da fila para a pilha de reserva\n");
+        printf("3 - Usar peça da pilha de reserva\n");
+        printf("4 - Trocar peça da frente da fila com o topo da pilha\n");
+        printf("5 - Trocar os 3 primeiros da fila com as 3 peças da pilha\n");
+        printf("0 - Sair\n");
+        printf("Escolha uma opção: ");
+        scanf("%d", &opcao);
+
+        switch (opcao) {
+            case 1:
+                if (fila.tamanho > 0) {
+                    Peca* peca = dequeue(&fila);
+                    printf("Peça jogada: [%c %d]\n", peca->nome, peca->id);
+                    free(peca);
+                    Peca* novaPeca = gerarPeca(id++);
+                    enqueue(&fila, novaPeca);
+                } else {
+                    printf("Fila vazia!\n");
+                }
+                break;
+            case 2:
+                if (fila.tamanho > 0 && pilha.tamanho < pilha.capacidade) {
+                    Peca* peca = dequeue(&fila);
+                    push(&pilha, peca);
+                    Peca* novaPeca = gerarPeca(id++);
+                    enqueue(&fila, novaPeca);
+                } else {
+                    printf("Fila vazia ou pilha cheia!\n");
+                }
+                break;
+            case 3:
+                if (pilha.tamanho > 0) {
+                    Peca* peca = pop(&pilha);
+                    printf("Peça usada: [%c %d]\n", peca->nome, peca->id);
+                    free(peca);
+                } else {
+                    printf("Pilha vazia!\n");
+                }
+                break;
+            case 4:
+                if (fila.tamanho > 0 && pilha.tamanho > 0) {
+                    Peca* pecaFila = dequeue(&fila);
+                    Peca* pecaPilha = pop(&pilha);
+                    push(&pilha, pecaFila);
+                    enqueue(&fila, pecaPilha);
+                } else {
+                    printf("Fila ou pilha vazia!\n");
+                }
+                break;
+            case 5:
+                if (fila.tamanho >= 3 && pilha.tamanho >= 3) {
+                    // Trocar os 3 primeiros da fila com as 3 peças da pilha
+                    Peca* peca1Fila = dequeue(&fila);
+                    Peca* peca2Fila = dequeue(&fila);
+                    Peca* peca3Fila = dequeue(&fila);
+                    Peca* peca1Pilha = pop(&pilha);
+                    Peca* peca2Pilha = pop(&pilha);
+                    Peca* peca3Pilha = pop(&pilha);
+                    push(&pilha, peca1Fila);
+                    push(&pilha, peca2Fila);
+                    push(&pilha, peca3Fila);
+                    enqueue(&fila, peca1Pilha);
+                    enqueue(&fila, peca2Pilha);
+                    enqueue(&fila, peca3Pilha);
+                } else {
+                    printf("Fila ou pilha com menos de 3 peças!\n");
+                }
+                break;
+            case 0:
+                printf("Saindo...\n");
+                break;
+            default:
+                printf("Opção inválida!\n");
+        }
+    } while (opcao != 0);
+
+    return 0;
+}
+
